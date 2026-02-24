@@ -111,12 +111,16 @@ fn main() {
                         let mut td_app =
                             TowerDefenseApp::new(Arc::clone(&human_driver), Arc::clone(&engine));
 
-                        let map_file = format!("{}地图.json", scene_id);
-                        let strategy_file = format!("{}策略.json", scene_id);
-                        let traps_file = "traps_config.json";
+                        let map_dir = format!("maps/{}", scene_id);
+                        let map_file = format!("{}/{}地图.json", map_dir, scene_id);
+                        let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
+                        let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
 
-                        println!("📂 加载配置: {} | {}", map_file, strategy_file);
-                        td_app.run(&map_file, &strategy_file, traps_file);
+                        println!("📂 加载配置目录: {}", map_dir);
+                        println!("   📍 地图: {}", map_file);
+                        println!("   📍 策略: {}", strategy_file);
+                        println!("   📍 防御塔: {}", traps_file);
+                        td_app.run(&map_file, &strategy_file, &traps_file);
                     }
                 }
 

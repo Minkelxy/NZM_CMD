@@ -1,0 +1,159 @@
+{
+  "map_name": "空间站地图",
+  "buildings": [
+    {
+      "uid": 1001,
+      "name": "自修复磁暴塔",
+      "b_type": "Floor",
+      "grid_x": 36,
+      "grid_y": 28,
+      "width": 4,
+      "height": 4,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1002,
+      "name": "自修复磁暴塔",
+      "b_type": "Floor",
+      "grid_x": 40,
+      "grid_y": 28,
+      "width": 4,
+      "height": 4,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1003,
+      "name": "破坏者",
+      "b_type": "Floor",
+      "grid_x": 33,
+      "grid_y": 32,
+      "width": 4,
+      "height": 4,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1004,
+      "name": "破坏者",
+      "b_type": "Floor",
+      "grid_x": 43,
+      "grid_y": 32,
+      "width": 4,
+      "height": 4,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1005,
+      "name": "破坏者",
+      "b_type": "Floor",
+      "grid_x": 29,
+      "grid_y": 32,
+      "width": 4,
+      "height": 4,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1006,
+      "name": "破坏者",
+      "b_type": "Floor",
+      "grid_x": 47,
+      "grid_y": 32,
+      "width": 4,
+      "height": 4,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1007,
+      "name": "修理站",
+      "b_type": "Floor",
+      "grid_x": 37,
+      "grid_y": 32,
+      "width": 2,
+      "height": 2,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1008,
+      "name": "修理站",
+      "b_type": "Floor",
+      "grid_x": 39,
+      "grid_y": 32,
+      "width": 2,
+      "height": 2,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1009,
+      "name": "修理站",
+      "b_type": "Floor",
+      "grid_x": 41,
+      "grid_y": 32,
+      "width": 2,
+      "height": 2,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1010,
+      "name": "修理站",
+      "b_type": "Floor",
+      "grid_x": 37,
+      "grid_y": 34,
+      "width": 2,
+      "height": 2,
+      "wave_num": 2,
+      "is_late": false
+    },
+    {
+      "uid": 1011,
+      "name": "修理站",
+      "b_type": "Floor",
+      "grid_x": 41,
+      "grid_y": 34,
+      "width": 2,
+      "height": 2,
+      "wave_num": 2,
+      "is_late": false
+    }
+  ],
+  "upgrades": [
+    {
+      "building_name": "自修复磁暴塔",
+      "wave_num": 3,
+      "is_late": false
+    },
+    {
+      "building_name": "破坏者",
+      "wave_num": 3,
+      "is_late": false
+    },
+    {
+      "building_name": "破坏者",
+      "wave_num": 3,
+      "is_late": false
+    },
+    {
+      "building_name": "破坏者",
+      "wave_num": 4,
+      "is_late": false
+    },
+    {
+      "building_name": "自修复磁暴塔",
+      "wave_num": 4,
+      "is_late": false
+    },
+    {
+      "building_name": "自修复磁暴塔",
+      "wave_num": 4,
+      "is_late": false
+    }
+  ],
+  "demolishes": []
+}

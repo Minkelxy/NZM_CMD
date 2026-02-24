@@ -1,0 +1,416 @@
+[
+  {
+    "name": "小型弹板陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      0,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      180,
+      180,
+      180,
+      255
+    ],
+    "icon_path": "maps/icons/小型弹板陷阱.png",
+    "cost": 400
+  },
+  {
+    "name": "巨型弹板陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      1,
+      0
+    ],
+    "width": 6,
+    "height": 6,
+    "color": [
+      160,
+      160,
+      160,
+      255
+    ],
+    "icon_path": "maps/icons/巨型弹板陷阱.png",
+    "cost": 3000
+  },
+  {
+    "name": "减速陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      2,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      80,
+      100,
+      255,
+      255
+    ],
+    "icon_path": "maps/icons/减速陷阱.png",
+    "cost": 400
+  },
+  {
+    "name": "突刺陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      3,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      130,
+      130,
+      130,
+      255
+    ],
+    "icon_path": "maps/icons/突刺陷阱.png",
+    "cost": 600
+  },
+  {
+    "name": "防空导弹",
+    "b_type": "Floor",
+    "grid_index": [
+      4,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      60,
+      200,
+      255,
+      255
+    ],
+    "icon_path": "maps/icons/防空导弹.png",
+    "cost": 600
+  },
+  {
+    "name": "自修复磁暴塔",
+    "b_type": "Floor",
+    "grid_index": [
+      0,
+      1
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      255,
+      255,
+      120,
+      255
+    ],
+    "icon_path": "maps/icons/自修复磁暴塔.png",
+    "cost": 2500
+  },
+  {
+    "name": "破坏者",
+    "b_type": "Floor",
+    "grid_index": [
+      1,
+      1
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      255,
+      60,
+      60,
+      255
+    ],
+    "icon_path": "maps/icons/破坏者.png",
+    "cost": 2500
+  },
+  {
+    "name": "修理站",
+    "b_type": "Floor",
+    "grid_index": [
+      2,
+      1
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      255,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/修理站.png",
+    "cost": 800
+  },
+  {
+    "name": "岗哨机枪",
+    "b_type": "Floor",
+    "grid_index": [
+      3,
+      1
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      255,
+      120,
+      80,
+      255
+    ],
+    "icon_path": "maps/icons/岗哨机枪.png",
+    "cost": 1000
+  },
+  {
+    "name": "诱捕陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      4,
+      1
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      140,
+      100,
+      180,
+      255
+    ],
+    "icon_path": "maps/icons/诱捕陷阱.png",
+    "cost": 800
+  },
+  {
+    "name": "电击陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      0,
+      2
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      140,
+      80,
+      255,
+      255
+    ],
+    "icon_path": "maps/icons/电击陷阱.png",
+    "cost": 400
+  },
+  {
+    "name": "毒刺陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      1,
+      2
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      80,
+      180,
+      80,
+      255
+    ],
+    "icon_path": "maps/icons/毒刺陷阱.png",
+    "cost": 600
+  },
+  {
+    "name": "战防炮",
+    "b_type": "Floor",
+    "grid_index": [
+      2,
+      2
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      200,
+      80,
+      40,
+      255
+    ],
+    "icon_path": "maps/icons/战防炮.png",
+    "cost": 1000
+  },
+  {
+    "name": "歼灭者",
+    "b_type": "Floor",
+    "grid_index": [
+      3,
+      2
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/歼灭者.png",
+    "cost": 2500
+  },
+  {
+    "name": "天启陷阱",
+    "b_type": "Floor",
+    "grid_index": [
+      4,
+      2
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      180,
+      180,
+      180,
+      255
+    ],
+    "icon_path": "maps/icons/天启陷阱.png",
+    "cost": 2500
+  },
+  {
+    "name": "智能枪塔",
+    "b_type": "Floor",
+    "grid_index": [
+      0,
+      3
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/智能枪塔.png",
+    "cost": 2500
+  },
+  {
+    "name": "火焰发射器",
+    "b_type": "Wall",
+    "grid_index": [
+      0,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/火焰发射器.png",
+    "cost": 800
+  },
+  {
+    "name": "激光发射器",
+    "b_type": "Wall",
+    "grid_index": [
+      1,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/激光发射器.png",
+    "cost": 800
+  },
+  {
+    "name": "天网陷阱",
+    "b_type": "Wall",
+    "grid_index": [
+      2,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/天网陷阱.png",
+    "cost": 1100
+  },
+  {
+    "name": "狂风陷阱",
+    "b_type": "Wall",
+    "grid_index": [
+      3,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/狂风陷阱.png",
+    "cost": 600
+  },
+  {
+    "name": "高能激光",
+    "b_type": "Ceiling",
+    "grid_index": [
+      0,
+      0
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/高能激光.png",
+    "cost": 2000
+  },
+  {
+    "name": "聚能炮",
+    "b_type": "Ceiling",
+    "grid_index": [
+      1,
+      0
+    ],
+    "width": 2,
+    "height": 2,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/聚能炮.png",
+    "cost": 1500
+  },
+  {
+    "name": "暴风之眼",
+    "b_type": "Ceiling",
+    "grid_index": [
+      2,
+      0
+    ],
+    "width": 4,
+    "height": 4,
+    "color": [
+      100,
+      100,
+      100,
+      255
+    ],
+    "icon_path": "maps/icons/暴风之眼.png",
+    "cost": 1500
+  }
+]

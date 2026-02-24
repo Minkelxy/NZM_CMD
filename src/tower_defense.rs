@@ -81,14 +81,40 @@ pub struct TrapConfigItem {
 
 // ✨ 修改：MapMeta 增加 prep_actions
 #[derive(Deserialize, Debug, Clone)]
+pub struct ViewportSafeArea {
+    pub min_x: f32,
+    pub min_y: f32,
+    pub max_x: f32,
+    pub max_y: f32,
+}
+
+#[derive(Deserialize, Debug, Clone)]
 pub struct MapMeta {
-    pub grid_pixel_size: f32,
+    pub grid_pixel_width: f32,
+    pub grid_pixel_height: f32,
     pub offset_x: f32,
     pub offset_y: f32,
     pub bottom: f32,
     #[serde(default)]
+    pub right: f32,
+    #[serde(default = "default_camera_speed_up")]
+    pub camera_speed_up: f32,
+    #[serde(default = "default_camera_speed_down")]
+    pub camera_speed_down: f32,
+    #[serde(default = "default_camera_speed_left")]
+    pub camera_speed_left: f32,
+    #[serde(default = "default_camera_speed_right")]
+    pub camera_speed_right: f32,
+    #[serde(default)]
+    pub viewport_safe_areas: Vec<ViewportSafeArea>,
+    #[serde(default)]
     pub prep_actions: Vec<PrepAction>,
 }
+
+fn default_camera_speed_up() -> f32 { 300.0 }
+fn default_camera_speed_down() -> f32 { 300.0 }
+fn default_camera_speed_left() -> f32 { 300.0 }
+fn default_camera_speed_right() -> f32 { 300.0 }
 
 #[derive(Deserialize, Debug, Clone)]
 pub struct BuildingExport {
@@ -172,6 +198,7 @@ fn get_hid_code(c: char) -> u8 {
 // ==========================================
 // 2. 塔防模块实现
 // ==========================================
+#[derive(Clone)]
 pub struct TowerDefenseApp {
     driver: Arc<Mutex<HumanDriver>>,
     nav: Arc<NavEngine>,
@@ -192,8 +219,8 @@ pub struct TowerDefenseApp {
     trap_lookup: HashMap<String, TrapConfigItem>,
     active_loadout: Vec<String>,
 
+    camera_offset_x: f32,
     camera_offset_y: f32,
-    move_speed: f32,
 }
 
 impl TowerDefenseApp {
@@ -213,8 +240,8 @@ impl TowerDefenseApp {
             last_wave_change_time: Instant::now(),
             trap_lookup: HashMap::new(),
             active_loadout: Vec::new(),
+            camera_offset_x: 0.0,
             camera_offset_y: 0.0,
-            move_speed: 300.0,
         }
     }
 
@@ -316,13 +343,17 @@ impl TowerDefenseApp {
     }
 
     fn are_tasks_in_current_view(&self, tasks: &[ScheduledTask]) -> bool {
-        let [_, sz_y1, _, sz_y2] = self.config.safe_zone;
+        let [sz_x1, sz_y1, sz_x2, sz_y2] = self.config.safe_zone;
+        let view_left = self.camera_offset_x;
         let view_top = self.camera_offset_y;
+        let safe_map_left = view_left + sz_x1 as f32;
+        let safe_map_right = view_left + sz_x2 as f32;
         let safe_map_top = view_top + sz_y1 as f32;
         let safe_map_bottom = view_top + sz_y2 as f32;
 
         for task in tasks {
-            if task.map_y < safe_map_top || task.map_y > safe_map_bottom {
+            if task.map_x < safe_map_left || task.map_x > safe_map_right ||
+               task.map_y < safe_map_top || task.map_y > safe_map_bottom {
                 return false;
             }
         }
@@ -462,7 +493,7 @@ impl TowerDefenseApp {
                 continue;
             }
 
-            let mut screen_moved = self.smart_move_camera(task.map_y);
+            let mut screen_moved = self.smart_move_camera(task.map_x, task.map_y);
             if is_first_task && force_initial_refresh {
                 screen_moved = true;
                 is_first_task = false;
@@ -599,11 +630,12 @@ impl TowerDefenseApp {
             human.key_hold(key, 2500);
         }
         self.camera_offset_y = if top { 0.0 } else { max_scroll_y };
+        self.clamp_camera_position();
         thread::sleep(Duration::from_millis(500));
     }
 
     fn scroll_camera_by_pixels(
-        &self,
+        &mut self,
         direction: char,
         pixels: f32,
         time_resolution_ms: u64,
@@ -611,50 +643,86 @@ impl TowerDefenseApp {
         if pixels < 10.0 {
             return 0.0;
         }
-        let raw_ms = (pixels / self.move_speed * 1000.0) as u64;
+        
+        let speed = self.get_camera_speed(direction);
+        let raw_ms = (pixels / speed * 1000.0) as u64;
         let units = (raw_ms + time_resolution_ms / 2) / time_resolution_ms;
         let final_ms = units.max(1) * time_resolution_ms;
 
         if let Ok(mut human) = self.driver.lock() {
             human.key_hold(direction, final_ms);
         }
-        (final_ms as f32 / 1000.0) * self.move_speed
+        
+        let moved = (final_ms as f32 / 1000.0) * speed;
+        
+        match direction {
+            'w' => self.camera_offset_y -= moved,
+            's' => self.camera_offset_y += moved,
+            'a' => self.camera_offset_x -= moved,
+            'd' => self.camera_offset_x += moved,
+            _ => {}
+        }
+        
+        self.clamp_camera_position();
+        moved
+    }
+    
+    fn move_camera_to_position(&mut self, target_x: f32, target_y: f32) -> bool {
+        let (min_x, max_x, min_y, max_y) = self.get_camera_bounds();
+        let target_x = target_x.clamp(min_x, max_x);
+        let target_y = target_y.clamp(min_y, max_y);
+        
+        let delta_x = target_x - self.camera_offset_x;
+        let delta_y = target_y - self.camera_offset_y;
+        
+        let mut moved = false;
+        const SCROLL_RES: u64 = 100;
+        
+        if delta_x.abs() > 10.0 {
+            let direction = if delta_x > 0.0 { 'd' } else { 'a' };
+            self.scroll_camera_by_pixels(direction, delta_x.abs(), SCROLL_RES);
+            moved = true;
+        }
+        
+        if delta_y.abs() > 10.0 {
+            let direction = if delta_y > 0.0 { 's' } else { 'w' };
+            self.scroll_camera_by_pixels(direction, delta_y.abs(), SCROLL_RES);
+            moved = true;
+        }
+        
+        if moved {
+            thread::sleep(Duration::from_millis(200));
+        }
+        
+        moved
     }
 
-    fn smart_move_camera(&mut self, target_map_y: f32) -> bool {
+    fn smart_move_camera(&mut self, target_map_x: f32, target_map_y: f32) -> bool {
         let [_, z_y1, _, z_y2] = self.config.safe_zone;
-        let screen_h = self.config.screen_height;
+        let screen_w = self.config.screen_width;
         let safe_center_screen_y = (z_y1 + z_y2) as f32 / 2.0;
-        let max_scroll_y = (self.map_meta.as_ref().unwrap().bottom - screen_h).max(0.0);
+        let safe_center_screen_x = screen_w / 2.0;
+        
+        let (min_x, max_x, min_y, max_y) = self.get_camera_bounds();
+        
+        let ideal_cam_x = (target_map_x - safe_center_screen_x).clamp(min_x, max_x);
+        let ideal_cam_y = (target_map_y - safe_center_screen_y).clamp(min_y, max_y);
+        
+        let delta_x = ideal_cam_x - self.camera_offset_x;
+        let delta_y = ideal_cam_y - self.camera_offset_y;
 
-        let ideal_cam_y = (target_map_y - safe_center_screen_y).clamp(0.0, max_scroll_y);
-        let delta = ideal_cam_y - self.camera_offset_y;
-
-        if delta.abs() < 90.0 {
+        if delta_x.abs() < 90.0 && delta_y.abs() < 90.0 {
             return false;
         }
-
-        let mid_scroll = max_scroll_y / 2.0;
-        const SCROLL_RES: u64 = 100;
-
-        if ideal_cam_y <= mid_scroll {
-            self.align_camera_to_edge(true);
-            self.camera_offset_y = 0.0;
-            if ideal_cam_y > 10.0 {
-                let moved = self.scroll_camera_by_pixels('s', ideal_cam_y, SCROLL_RES);
-                self.camera_offset_y += moved;
-            }
-        } else {
-            self.align_camera_to_edge(false);
-            self.camera_offset_y = max_scroll_y;
-            let dist_up = max_scroll_y - ideal_cam_y;
-            if dist_up > 10.0 {
-                let moved = self.scroll_camera_by_pixels('w', dist_up, SCROLL_RES);
-                self.camera_offset_y -= moved;
-            }
+        
+        let moved = self.move_camera_to_position(ideal_cam_x, ideal_cam_y);
+        
+        if moved {
+            println!("📷 摄像机移动: ({:.0}, {:.0}) -> ({:.0}, {:.0})", 
+                self.camera_offset_x, self.camera_offset_y, ideal_cam_x, ideal_cam_y);
         }
-        thread::sleep(Duration::from_millis(200));
-        true
+        
+        moved
     }
 
     pub fn load_map_terrain(&mut self, path: &str) {
@@ -696,7 +764,10 @@ impl TowerDefenseApp {
             human.key_hold('w', 200);
             human.key_hold('a', 200);
         }
+        self.camera_offset_x = 0.0;
         self.camera_offset_y = 0.0;
+        self.clamp_camera_position();
+        println!("✅ 摄像机已重置到 (0, 0)");
     }
 
     pub fn execute_prep_logic(&self) {
@@ -789,9 +860,80 @@ impl TowerDefenseApp {
         h: usize,
     ) -> Option<(f32, f32)> {
         let meta = self.map_meta.as_ref()?;
-        let sx = meta.offset_x + ((gx as f32 + w as f32 / 2.0) * meta.grid_pixel_size);
-        let sy = meta.offset_y + ((gy as f32 + h as f32 / 2.0) * meta.grid_pixel_size);
+        let sx = meta.offset_x + ((gx as f32 + w as f32 / 2.0) * meta.grid_pixel_width);
+        let sy = meta.offset_y + ((gy as f32 + h as f32 / 2.0) * meta.grid_pixel_height);
         Some((sx, sy))
+    }
+    
+    fn get_camera_speed(&self, direction: char) -> f32 {
+        if let Some(meta) = &self.map_meta {
+            match direction {
+                'w' => meta.camera_speed_up,
+                's' => meta.camera_speed_down,
+                'a' => meta.camera_speed_left,
+                'd' => meta.camera_speed_right,
+                _ => 300.0,
+            }
+        } else {
+            300.0
+        }
+    }
+    
+    fn get_camera_bounds(&self) -> (f32, f32, f32, f32) {
+        if let Some(meta) = &self.map_meta {
+            let max_x = (meta.right - self.config.screen_width).max(0.0);
+            let max_y = (meta.bottom - self.config.screen_height).max(0.0);
+            (0.0, max_x, 0.0, max_y)
+        } else {
+            (0.0, 0.0, 0.0, 0.0)
+        }
+    }
+    
+    fn clamp_camera_position(&mut self) {
+        let (min_x, max_x, min_y, max_y) = self.get_camera_bounds();
+        self.camera_offset_x = self.camera_offset_x.clamp(min_x, max_x);
+        self.camera_offset_y = self.camera_offset_y.clamp(min_y, max_y);
+    }
+    
+    #[allow(dead_code)]
+    fn align_camera_to_corner(&mut self, left: bool, top: bool) {
+        let meta = self.map_meta.as_ref().unwrap();
+        let max_scroll_x = (meta.right - self.config.screen_width).max(0.0);
+        let max_scroll_y = (meta.bottom - self.config.screen_height).max(0.0);
+
+        if let Ok(mut human) = self.driver.lock() {
+            let key_y = if top { 'w' } else { 's' };
+            let key_x = if left { 'a' } else { 'd' };
+            println!("🔄 强制归零: {} {}", if top { "顶部" } else { "底部" }, if left { "左侧" } else { "右侧" });
+            
+            human.key_hold(key_y, 2500);
+            thread::sleep(Duration::from_millis(100));
+            human.key_hold(key_x, 2500);
+        }
+        
+        self.camera_offset_x = if left { 0.0 } else { max_scroll_x };
+        self.camera_offset_y = if top { 0.0 } else { max_scroll_y };
+        self.clamp_camera_position();
+        thread::sleep(Duration::from_millis(500));
+    }
+    
+    #[allow(dead_code)]
+    fn is_position_in_safe_area(&self, map_x: f32, map_y: f32) -> bool {
+        if let Some(meta) = &self.map_meta {
+            if meta.viewport_safe_areas.is_empty() {
+                return true;
+            }
+            
+            for area in &meta.viewport_safe_areas {
+                if map_x >= area.min_x && map_x <= area.max_x &&
+                   map_y >= area.min_y && map_y <= area.max_y {
+                    return true;
+                }
+            }
+            false
+        } else {
+            true
+        }
     }
 
     fn get_trap_key(&self, name: &str) -> char {
