@@ -1,0 +1,128 @@
+{
+  "map_name": "空间站英雄",
+  "buildings": [
+    {
+      "uid": 1001,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 28,
+      "grid_y": 4,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1002,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 0,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1003,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 16,
+      "grid_y": 26,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1004,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 78,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1005,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 62,
+      "grid_y": 26,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1007,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 16,
+      "grid_y": 70,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1008,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 62,
+      "grid_y": 70,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1010,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 32,
+      "grid_y": 74,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1011,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 46,
+      "grid_y": 74,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1012,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 24,
+      "grid_y": 52,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    },
+    {
+      "uid": 1013,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 54,
+      "grid_y": 52,
+      "width": 2,
+      "height": 2,
+      "wave_num": 1,
+      "is_late": false
+    }
+  ],
+  "upgrades": [],
+  "demolishes": []
+}
