@@ -62,7 +62,7 @@ impl Default for TDConfig {
         Self {
             hud_check_rect: [262, 16, 389, 97],
             hud_wave_loop_rect: [350, 288, 582, 362],
-            safe_zone: [200, 150, 1720, 930],
+            safe_zone: [200, 200, 1720, 750],
             screen_width: 1920.0,
             screen_height: 1080.0,
         }
@@ -366,6 +366,10 @@ impl TowerDefenseApp {
             "🚀 优化执行第 {} 波 [{}] (拆除优先模式)...",
             wave, phase_name
         );
+        
+        if !is_late {
+            self.calibrate_camera_to_corner(true);
+        }
 
         let mut demolish_tasks = Vec::new();
         let mut build_upgrade_tasks = Vec::new();
@@ -493,10 +497,26 @@ impl TowerDefenseApp {
                 continue;
             }
 
-            let mut screen_moved = self.smart_move_camera(task.map_x, task.map_y);
-            if is_first_task && force_initial_refresh {
-                screen_moved = true;
-                is_first_task = false;
+            let [sz_x1, sz_y1, sz_x2, sz_y2] = self.config.safe_zone;
+            let view_left = self.camera_offset_x;
+            let view_top = self.camera_offset_y;
+            let safe_map_left = view_left + sz_x1 as f32;
+            let safe_map_right = view_left + sz_x2 as f32;
+            let safe_map_top = view_top + sz_y1 as f32;
+            let safe_map_bottom = view_top + sz_y2 as f32;
+
+            let is_task_in_safe_zone = task.map_x >= safe_map_left && task.map_x <= safe_map_right &&
+                                       task.map_y >= safe_map_top && task.map_y <= safe_map_bottom;
+
+            let mut screen_moved = false;
+            if !force_initial_refresh && is_task_in_safe_zone {
+                println!("✨ 任务在安全区内，跳过摄像头移动");
+            } else {
+                screen_moved = self.smart_move_camera(task.map_x, task.map_y);
+                if is_first_task && force_initial_refresh {
+                    screen_moved = true;
+                    is_first_task = false;
+                }
             }
 
             match &task.action {
@@ -520,7 +540,7 @@ impl TowerDefenseApp {
 
     fn perform_demolish_action(&mut self, map_x: f32, map_y: f32, uid: usize) {
         let [sz_x1, sz_y1, sz_x2, sz_y2] = self.config.safe_zone;
-        let screen_x = (map_x - 0.0).clamp(sz_x1 as f32, sz_x2 as f32);
+        let screen_x = (map_x - self.camera_offset_x).clamp(sz_x1 as f32, sz_x2 as f32);
         let screen_y = (map_y - self.camera_offset_y).clamp(sz_y1 as f32, sz_y2 as f32);
 
         if let Ok(mut driver) = self.driver.lock() {
@@ -563,7 +583,7 @@ impl TowerDefenseApp {
         uid: usize,
     ) {
         let [sz_x1, sz_y1, sz_x2, sz_y2] = self.config.safe_zone;
-        let screen_x = (map_x - 0.0).clamp(sz_x1 as f32, sz_x2 as f32);
+        let screen_x = (map_x - self.camera_offset_x).clamp(sz_x1 as f32, sz_x2 as f32);
         let screen_y = (map_y - self.camera_offset_y).clamp(sz_y1 as f32, sz_y2 as f32);
         let key = self.get_trap_key(name);
 
@@ -634,6 +654,28 @@ impl TowerDefenseApp {
         thread::sleep(Duration::from_millis(500));
     }
 
+    fn calibrate_camera_to_corner(&mut self, top_left: bool) {
+        let (min_x, _max_x, min_y, max_y) = self.get_camera_bounds();
+        
+        let target_x = min_x;
+        let target_y = if top_left { min_y } else { max_y };
+        
+        println!("🎯 校准摄像机到 {}...", if top_left { "左上角" } else { "左下角" });
+        
+        if let Ok(mut human) = self.driver.lock() {
+            human.key_hold('w', 3000);
+            human.key_hold('a', 3000);
+            if !top_left {
+                human.key_hold('s', 3000);
+            }
+        }
+        
+        self.camera_offset_x = target_x;
+        self.camera_offset_y = target_y;
+        self.clamp_camera_position();
+        thread::sleep(Duration::from_millis(500));
+    }
+
     fn scroll_camera_by_pixels(
         &mut self,
         direction: char,
@@ -698,10 +740,9 @@ impl TowerDefenseApp {
     }
 
     fn smart_move_camera(&mut self, target_map_x: f32, target_map_y: f32) -> bool {
-        let [_, z_y1, _, z_y2] = self.config.safe_zone;
-        let screen_w = self.config.screen_width;
-        let safe_center_screen_y = (z_y1 + z_y2) as f32 / 2.0;
-        let safe_center_screen_x = screen_w / 2.0;
+        let [sz_x1, sz_y1, sz_x2, sz_y2] = self.config.safe_zone;
+        let safe_center_screen_x = (sz_x1 + sz_x2) as f32 / 2.0;
+        let safe_center_screen_y = (sz_y1 + sz_y2) as f32 / 2.0;
         
         let (min_x, max_x, min_y, max_y) = self.get_camera_bounds();
         
@@ -711,7 +752,8 @@ impl TowerDefenseApp {
         let delta_x = ideal_cam_x - self.camera_offset_x;
         let delta_y = ideal_cam_y - self.camera_offset_y;
 
-        if delta_x.abs() < 90.0 && delta_y.abs() < 90.0 {
+        const MOVE_THRESHOLD: f32 = 100.0;
+        if delta_x.abs() < MOVE_THRESHOLD && delta_y.abs() < MOVE_THRESHOLD {
             return false;
         }
         
