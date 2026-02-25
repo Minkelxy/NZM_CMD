@@ -62,7 +62,7 @@ impl Default for TDConfig {
         Self {
             hud_check_rect: [262, 16, 389, 97],
             hud_wave_loop_rect: [350, 288, 582, 362],
-            safe_zone: [200, 200, 1720, 750],
+            safe_zone: [200, 200, 1720, 880],
             screen_width: 1920.0,
             screen_height: 1080.0,
         }
@@ -351,13 +351,29 @@ impl TowerDefenseApp {
         let safe_map_top = view_top + sz_y1 as f32;
         let safe_map_bottom = view_top + sz_y2 as f32;
 
+        println!("📍 [视野检查] 摄像机位置: ({:.0}, {:.0})", view_left, view_top);
+        println!("📍 [视野检查] 安全区范围: X[{:.0}-{:.0}] Y[{:.0}-{:.0}]", 
+            safe_map_left, safe_map_right, safe_map_top, safe_map_bottom);
+
+        let mut has_positional_task = false;
         for task in tasks {
+            if matches!(task.action, TaskAction::Upgrade(_)) {
+                continue;
+            }
+            has_positional_task = true;
+            println!("📍 [视野检查] 任务位置: ({:.0}, {:.0})", task.map_x, task.map_y);
             if task.map_x < safe_map_left || task.map_x > safe_map_right ||
                task.map_y < safe_map_top || task.map_y > safe_map_bottom {
+                println!("❌ [视野检查] 任务不在安全区内");
                 return false;
             }
         }
-        true
+        if has_positional_task {
+            println!("✅ [视野检查] 所有任务在安全区内");
+        } else {
+            println!("⚠️ [视野检查] 没有位置任务（仅升级任务）");
+        }
+        has_positional_task
     }
 
     pub fn execute_wave_phase(&mut self, wave: i32, is_late: bool) {
@@ -647,7 +663,7 @@ impl TowerDefenseApp {
         if let Ok(mut human) = self.driver.lock() {
             let key = if top { 'w' } else { 's' };
             println!("🔄 强制归零: {}", if top { "顶部" } else { "底部" });
-            human.key_hold(key, 2500);
+            human.key_hold(key, 3500);
         }
         self.camera_offset_y = if top { 0.0 } else { max_scroll_y };
         self.clamp_camera_position();
