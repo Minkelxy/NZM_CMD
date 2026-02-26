@@ -280,24 +280,6 @@ impl TowerDefenseApp {
     fn extract_wave_with_validation(&self, text: &str) -> Option<i32> {
         let fixed = Self::fix_ocr_text(text);
         
-        let re = Regex::new(r"(\d+)/\d+.*波次").ok()?;
-        if let Some(caps) = re.captures(&fixed) {
-            if let Ok(num) = caps.get(1)?.as_str().parse::<i32>() {
-                if num == self.last_confirmed_wave || num == self.last_confirmed_wave + 1 {
-                    return Some(num);
-                }
-            }
-        }
-        
-        let re = Regex::new(r"波次.*?(\d+)").ok()?;
-        if let Some(caps) = re.captures(&fixed) {
-            if let Ok(num) = caps.get(1)?.as_str().parse::<i32>() {
-                if num == self.last_confirmed_wave || num == self.last_confirmed_wave + 1 {
-                    return Some(num);
-                }
-            }
-        }
-        
         let re_all = Regex::new(r"\d+").ok()?;
         let candidates: Vec<i32> = re_all
             .captures_iter(&fixed)
@@ -307,9 +289,17 @@ impl TowerDefenseApp {
         
         for &num in &candidates {
             if num == self.last_confirmed_wave + 1 {
+                println!("🔧 [OCR Smart] 选择预期波次: {}", num);
                 return Some(num);
             }
         }
+        
+        for &num in &candidates {
+            if num == self.last_confirmed_wave {
+                return Some(num);
+            }
+        }
+        
         if let Some(&num) = candidates.first() {
             if num > self.last_confirmed_wave {
                 return Some(num);
@@ -1110,6 +1100,7 @@ impl TowerDefenseApp {
 
         println!("🤖 自动化监控中...");
         let mut no_wave_count = 0;
+        let mut skip_count = 0;
         loop {
             // 尝试检测波次 (带 Tab 切换)
             // 我们把结果存下来，以便处理 "未检测到" 的情况
@@ -1118,6 +1109,7 @@ impl TowerDefenseApp {
             if let Some(status) = wave_status_opt {
                 // === 情况 A: 正常检测到波次 ===
                 no_wave_count = 0; // 重置计数器
+                skip_count = 0; // 重置跳过计数
                 if self.validate_wave_transition(status.current_wave) {
                     let current_wave = status.current_wave;
                     self.execute_wave_phase(current_wave, false);
@@ -1132,40 +1124,49 @@ impl TowerDefenseApp {
                 // === 情况 B: 未检测到波次 (可能是结算界面) ===
                 no_wave_count += 1;
                 println!(
-                    "⚠️ [Monitor] 未检测到波次信息 ({}/2)，尝试跳过结算...",
+                    "⚠️ [Monitor] 未检测到波次信息 ({}/2)",
                     no_wave_count
                 );
 
-                if let Ok(mut d) = self.driver.lock() {
-                    println!("   -> 点击空格 (Space) + 双击 ESC");
+                // 连续2次未检测到波次，才尝试跳过结算
+                if no_wave_count >= 2 {
+                    skip_count += 1;
+                    println!(
+                        "   -> 第 {} 次跳过结算 (共需3次)",
+                        skip_count
+                    );
 
-                    // 直接操作底层设备发送 HID 码 0x29 (ESC)
-                    if let Ok(mut dev) = d.device.lock() {
-                        // 第一次 ESC
-                        dev.key_down(0x29, 0);
-                        thread::sleep(Duration::from_millis(100)); // 按下持续时间
-                        dev.key_up();
+                    if let Ok(mut d) = self.driver.lock() {
+                        println!("   -> 点击空格 (Space) + 双击 ESC");
 
-                        thread::sleep(Duration::from_millis(300)); // 两次按键间隔
-                    }
+                        // 直接操作底层设备发送 HID 码 0x29 (ESC)
+                        if let Ok(mut dev) = d.device.lock() {
+                            // 第一次 ESC
+                            dev.key_down(0x29, 0);
+                            thread::sleep(Duration::from_millis(100)); // 按下持续时间
+                            dev.key_up();
 
-                    // 点击空格 (跳过结算动画)
-                    d.key_click(' ');
-                    thread::sleep(Duration::from_millis(500));
+                            thread::sleep(Duration::from_millis(300)); // 两次按键间隔
+                        }
 
-                    if let Ok(mut dev) = d.device.lock() {
-                        // 第二次 ESC
-                        dev.key_down(0x29, 0);
-                        thread::sleep(Duration::from_millis(100));
-                        dev.key_up();
+                        // 点击空格 (跳过结算动画)
+                        d.key_click(' ');
+                        thread::sleep(Duration::from_millis(500));
+
+                        if let Ok(mut dev) = d.device.lock() {
+                            // 第二次 ESC
+                            dev.key_down(0x29, 0);
+                            thread::sleep(Duration::from_millis(100));
+                            dev.key_up();
+                        }
                     }
                 }
 
-                // 2. 检查退出条件
-                if no_wave_count >= 3 {
-                    println!("🏁 连续 2 次未检测到波次，判定为游戏结束。");
+                // 连续3次跳过结算后，判定为游戏结束
+                if skip_count >= 3 {
+                    println!("🏁 连续 3 次跳过结算，判定为游戏结束。");
                     println!("🔄 退出当前循环，返回主程序...");
-                    break; // 跳出 loop，函数结束，控制权交还给 main 的 loop
+                    break;
                 }
             }
 
