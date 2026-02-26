@@ -263,6 +263,62 @@ impl TowerDefenseApp {
         }
     }
 
+    fn fix_ocr_text(text: &str) -> String {
+        text.replace("日", "6")
+            .replace("曰", "6")
+            .replace("彐", "9")
+            .replace("ヨ", "9")
+            .replace('S', "8")
+            .replace('s', "8")
+            .replace('l', "1")
+            .replace('I', "1")
+            .replace('i', "1")
+            .replace('O', "0")
+            .replace('o', "0")
+    }
+
+    fn extract_wave_with_validation(&self, text: &str) -> Option<i32> {
+        let fixed = Self::fix_ocr_text(text);
+        
+        let re = Regex::new(r"(\d+)/\d+.*波次").ok()?;
+        if let Some(caps) = re.captures(&fixed) {
+            if let Ok(num) = caps.get(1)?.as_str().parse::<i32>() {
+                if num == self.last_confirmed_wave || num == self.last_confirmed_wave + 1 {
+                    return Some(num);
+                }
+            }
+        }
+        
+        let re = Regex::new(r"波次.*?(\d+)").ok()?;
+        if let Some(caps) = re.captures(&fixed) {
+            if let Ok(num) = caps.get(1)?.as_str().parse::<i32>() {
+                if num == self.last_confirmed_wave || num == self.last_confirmed_wave + 1 {
+                    return Some(num);
+                }
+            }
+        }
+        
+        let re_all = Regex::new(r"\d+").ok()?;
+        let candidates: Vec<i32> = re_all
+            .captures_iter(&fixed)
+            .filter_map(|c| c.get(0)?.as_str().parse().ok())
+            .filter(|&n| n > 0 && n <= 100)
+            .collect();
+        
+        for &num in &candidates {
+            if num == self.last_confirmed_wave + 1 {
+                return Some(num);
+            }
+        }
+        if let Some(&num) = candidates.first() {
+            if num > self.last_confirmed_wave {
+                return Some(num);
+            }
+        }
+        
+        None
+    }
+
     pub fn recognize_wave_status(&self, rect: [i32; 4], use_tab: bool) -> Option<WaveStatus> {
         const KEY_TAB: u8 = 0x2B;
         if use_tab {
@@ -306,21 +362,13 @@ impl TowerDefenseApp {
             if use_tab { "TAB" } else { "HUD" }
         );
 
-        let val = if use_tab {
-            let re = Regex::new(r"(\d+)[/\dSI日]+.*波次").ok()?;
-            re.captures(&text).and_then(|caps| {
-                let num = caps.get(1)?.as_str().parse::<i32>().ok()?;
-                println!("✅ [OCR Match] TAB 模式匹配成功: 第 {} 波", num);
-                Some(num)
-            })?
-        } else {
-            let re = Regex::new(r"波次\s*(\d+)").ok()?;
-            re.captures(&text).and_then(|caps| {
-                let num = caps.get(1)?.as_str().parse::<i32>().ok()?;
-                println!("✅ [OCR Match] HUD 模式匹配成功: 第 {} 波", num);
-                Some(num)
-            })?
-        };
+        let fixed = Self::fix_ocr_text(&text);
+        if fixed != text {
+            println!("🔧 [OCR Fix] 修复后: 「{}」", fixed.trim());
+        }
+
+        let val = self.extract_wave_with_validation(&fixed)?;
+        println!("✅ [OCR Match] 波次识别成功: 第 {} 波", val);
         Some(WaveStatus { current_wave: val })
     }
 
