@@ -1,5 +1,5 @@
 {
-  "map_name": "空间站英雄",
+  "map_name": "空间站地图",
   "buildings": [
     {
       "uid": 1001,
@@ -486,50 +486,6 @@
       "is_late": false
     },
     {
-      "uid": 1082,
-      "name": "天启陷阱",
-      "b_type": "Floor",
-      "grid_x": 28,
-      "grid_y": 66,
-      "width": 4,
-      "height": 4,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1083,
-      "name": "天启陷阱",
-      "b_type": "Floor",
-      "grid_x": 28,
-      "grid_y": 62,
-      "width": 4,
-      "height": 4,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1084,
-      "name": "天启陷阱",
-      "b_type": "Floor",
-      "grid_x": 48,
-      "grid_y": 62,
-      "width": 4,
-      "height": 4,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1085,
-      "name": "天启陷阱",
-      "b_type": "Floor",
-      "grid_x": 48,
-      "grid_y": 66,
-      "width": 4,
-      "height": 4,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
       "uid": 1090,
       "name": "防空导弹",
       "b_type": "Floor",
@@ -640,138 +596,6 @@
       "is_late": false
     },
     {
-      "uid": 1102,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 14,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1103,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 12,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1104,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 10,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1105,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 10,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1106,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 12,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1107,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 14,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1108,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 64,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1109,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 66,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1110,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 68,
-      "grid_y": 38,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1111,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 68,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1112,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 66,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "uid": 1113,
-      "name": "天网陷阱",
-      "b_type": "Wall",
-      "grid_x": 64,
-      "grid_y": 42,
-      "width": 2,
-      "height": 2,
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
       "uid": 1114,
       "name": "天启陷阱",
       "b_type": "Floor",
@@ -816,7 +640,205 @@
       "is_late": false
     },
     {
-      "uid": 1118,
+      "uid": 1132,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 64,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1133,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 66,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1135,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 64,
+      "grid_y": 42,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1136,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 66,
+      "grid_y": 42,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1138,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 14,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1139,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 12,
+      "grid_y": 38,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1142,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 12,
+      "grid_y": 42,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1143,
+      "name": "天网陷阱",
+      "b_type": "Wall",
+      "grid_x": 14,
+      "grid_y": 42,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1144,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 26,
+      "grid_y": 60,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1145,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 24,
+      "grid_y": 60,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1146,
+      "name": "天启陷阱",
+      "b_type": "Floor",
+      "grid_x": 28,
+      "grid_y": 66,
+      "width": 4,
+      "height": 4,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1147,
+      "name": "天启陷阱",
+      "b_type": "Floor",
+      "grid_x": 48,
+      "grid_y": 66,
+      "width": 4,
+      "height": 4,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1148,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 54,
+      "grid_y": 60,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1149,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 52,
+      "grid_y": 60,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1150,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 52,
+      "grid_y": 58,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1151,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 54,
+      "grid_y": 58,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1152,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 26,
+      "grid_y": 58,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1153,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 24,
+      "grid_y": 58,
+      "width": 2,
+      "height": 2,
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "uid": 1154,
       "name": "自修复磁暴塔",
       "b_type": "Floor",
       "grid_x": 24,
@@ -824,10 +846,10 @@
       "width": 4,
       "height": 4,
       "wave_num": 6,
-      "is_late": false
+      "is_late": true
     },
     {
-      "uid": 1119,
+      "uid": 1155,
       "name": "自修复磁暴塔",
       "b_type": "Floor",
       "grid_x": 52,
@@ -835,139 +857,227 @@
       "width": 4,
       "height": 4,
       "wave_num": 6,
-      "is_late": false
+      "is_late": true
     },
     {
-      "uid": 1120,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 24,
-      "grid_y": 56,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1121,
+      "uid": 1156,
       "name": "防空导弹",
       "b_type": "Floor",
       "grid_x": 26,
       "grid_y": 56,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
     },
     {
-      "uid": 1122,
+      "uid": 1157,
       "name": "防空导弹",
       "b_type": "Floor",
       "grid_x": 24,
-      "grid_y": 58,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1123,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 26,
-      "grid_y": 58,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1124,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 24,
-      "grid_y": 60,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1125,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 26,
-      "grid_y": 60,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1126,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 52,
       "grid_y": 56,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
     },
     {
-      "uid": 1127,
+      "uid": 1158,
       "name": "防空导弹",
       "b_type": "Floor",
       "grid_x": 54,
       "grid_y": 56,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
     },
     {
-      "uid": 1128,
+      "uid": 1159,
       "name": "防空导弹",
       "b_type": "Floor",
       "grid_x": 52,
-      "grid_y": 58,
+      "grid_y": 56,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
     },
     {
-      "uid": 1129,
+      "uid": 1160,
       "name": "防空导弹",
       "b_type": "Floor",
-      "grid_x": 54,
-      "grid_y": 58,
-      "width": 2,
-      "height": 2,
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "uid": 1130,
-      "name": "防空导弹",
-      "b_type": "Floor",
-      "grid_x": 52,
+      "grid_x": 34,
       "grid_y": 60,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
     },
     {
-      "uid": 1131,
+      "uid": 1161,
       "name": "防空导弹",
       "b_type": "Floor",
-      "grid_x": 54,
+      "grid_x": 34,
+      "grid_y": 62,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1162,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 34,
+      "grid_y": 64,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1163,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 34,
+      "grid_y": 66,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1164,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
       "grid_y": 60,
       "width": 2,
       "height": 2,
-      "wave_num": 6,
-      "is_late": false
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1165,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 62,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1166,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 64,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1167,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 66,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1168,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 34,
+      "grid_y": 68,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1169,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 34,
+      "grid_y": 70,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1170,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 34,
+      "grid_y": 72,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1171,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 68,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1172,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 70,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1173,
+      "name": "防空导弹",
+      "b_type": "Floor",
+      "grid_x": 44,
+      "grid_y": 72,
+      "width": 2,
+      "height": 2,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1174,
+      "name": "天启陷阱",
+      "b_type": "Floor",
+      "grid_x": 28,
+      "grid_y": 62,
+      "width": 4,
+      "height": 4,
+      "wave_num": 7,
+      "is_late": true
+    },
+    {
+      "uid": 1175,
+      "name": "天启陷阱",
+      "b_type": "Floor",
+      "grid_x": 48,
+      "grid_y": 62,
+      "width": 4,
+      "height": 4,
+      "wave_num": 7,
+      "is_late": true
     }
   ],
   "upgrades": [
@@ -993,16 +1103,6 @@
     },
     {
       "building_name": "自修复磁暴塔",
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "building_name": "自修复磁暴塔",
-      "wave_num": 6,
-      "is_late": false
-    },
-    {
-      "building_name": "防空导弹",
       "wave_num": 6,
       "is_late": false
     },

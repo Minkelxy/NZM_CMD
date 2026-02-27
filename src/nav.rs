@@ -155,32 +155,14 @@ impl GameInterface {
              Err(_) => return String::new(),
          };
 
-         // 1. 基础转换
          let rgba_img = image::RgbaImage::from_raw(captured_data.width(), captured_data.height(), captured_data.into_raw()).unwrap();
          let dynamic_img = image::DynamicImage::ImageRgba8(rgba_img);
 
-         // 2. 🔥 2倍放大：Lanczos3 采样能有效平滑艺术字边缘
          let scaled_img = dynamic_img.resize(w as u32 * 2, h as u32 * 2, image::imageops::FilterType::Lanczos3);
          
-         // 3. 🔥 多重曝光 OCR 策略
-         let mut results = Vec::new();
-
-         // 策略 A: 强二值化 (阈值 200)
-         let mut luma_high = scaled_img.grayscale().into_luma8();
-         for pixel in luma_high.pixels_mut() { pixel[0] = if pixel[0] > 200 { 255 } else { 0 }; }
-         results.push(self.run_windows_ocr(image::DynamicImage::ImageLuma8(luma_high)));
-
-         // 策略 B: 中等二值化 (阈值 140)
          let mut luma_mid = scaled_img.grayscale().into_luma8();
          for pixel in luma_mid.pixels_mut() { pixel[0] = if pixel[0] > 140 { 255 } else { 0 }; }
-         results.push(self.run_windows_ocr(image::DynamicImage::ImageLuma8(luma_mid)));
-
-         // 策略 C: 原色缩放图
-         results.push(self.run_windows_ocr(scaled_img.clone()));
-
-         // 4. 合并所有识别到的文本块
-         let final_text = results.join(" ");
-         final_text
+         self.run_windows_ocr(image::DynamicImage::ImageLuma8(luma_mid))
     }
 
     fn check_text_anchor(&self, rect: [i32; 4], expected: &str) -> bool {

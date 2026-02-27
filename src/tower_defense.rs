@@ -215,6 +215,7 @@ pub struct TowerDefenseApp {
 
     last_confirmed_wave: i32,
     last_wave_change_time: Instant,
+    last_ocr_text: String,
 
     trap_lookup: HashMap<String, TrapConfigItem>,
     active_loadout: Vec<String>,
@@ -238,6 +239,7 @@ impl TowerDefenseApp {
             completed_demolish_uids: HashSet::new(),
             last_confirmed_wave: 0,
             last_wave_change_time: Instant::now(),
+            last_ocr_text: String::new(),
             trap_lookup: HashMap::new(),
             active_loadout: Vec::new(),
             camera_offset_x: 0.0,
@@ -263,53 +265,64 @@ impl TowerDefenseApp {
         }
     }
 
-    fn fix_ocr_text(text: &str) -> String {
-        text.replace("日", "6")
-            .replace("曰", "6")
-            .replace("彐", "9")
-            .replace("ヨ", "9")
-            .replace('S', "8")
-            .replace('s', "8")
-            .replace('l', "1")
-            .replace('I', "1")
-            .replace('i', "1")
-            .replace('O', "0")
-            .replace('o', "0")
-    }
-
-    fn extract_wave_with_validation(&self, text: &str) -> Option<i32> {
-        let fixed = Self::fix_ocr_text(text);
+    fn extract_wave_with_validation(&self, text: &str, is_same_text: bool) -> Option<i32> {
+        if is_same_text {
+            println!("🔧 [OCR Smart] 文本相同，保持波次: {}", self.last_confirmed_wave);
+            return Some(self.last_confirmed_wave);
+        }
+        
+        let re = Regex::new(r"(\d+)/\d+.*波次").ok()?;
+        if let Some(caps) = re.captures(text) {
+            if let Ok(num) = caps.get(1)?.as_str().parse::<i32>() {
+                if num == self.last_confirmed_wave || num == self.last_confirmed_wave + 1 {
+                    println!("🔧 [OCR Smart] 格式匹配: {} (文本: {})", num, text.trim());
+                    return Some(num);
+                }
+            }
+        }
         
         let re_all = Regex::new(r"\d+").ok()?;
         let candidates: Vec<i32> = re_all
-            .captures_iter(&fixed)
+            .captures_iter(text)
             .filter_map(|c| c.get(0)?.as_str().parse().ok())
             .filter(|&n| n > 0 && n <= 100)
             .collect();
         
-        for &num in &candidates {
-            if num == self.last_confirmed_wave + 1 {
-                println!("🔧 [OCR Smart] 选择预期波次: {}", num);
+        if !candidates.is_empty() {
+            let valid: Vec<i32> = candidates
+                .iter()
+                .filter(|&&n| n == self.last_confirmed_wave || n == self.last_confirmed_wave + 1)
+                .cloned()
+                .collect();
+            
+            if !valid.is_empty() {
+                let valid_sorted: Vec<i32> = {
+                    let mut v = valid.clone();
+                    v.sort();
+                    v
+                };
+                if let Some(&num) = valid_sorted.first() {
+                    println!("🔧 [OCR Smart] 选择有效波次: {} (候选: {:?})", num, valid_sorted);
+                    return Some(num);
+                }
+            }
+            
+            if let Some(&num) = candidates.first() {
+                println!("🔧 [OCR Smart] 无有效波次，选择第一个: {}", num);
                 return Some(num);
             }
         }
         
-        for &num in &candidates {
-            if num == self.last_confirmed_wave {
-                return Some(num);
-            }
-        }
-        
-        if let Some(&num) = candidates.first() {
-            if num > self.last_confirmed_wave {
-                return Some(num);
-            }
+        if text.contains("波次") {
+            let inferred = self.last_confirmed_wave + 1;
+            println!("🔧 [OCR Smart] 文本含「波次」但无数字，推断为: {}", inferred);
+            return Some(inferred);
         }
         
         None
     }
 
-    pub fn recognize_wave_status(&self, rect: [i32; 4], use_tab: bool) -> Option<WaveStatus> {
+    pub fn recognize_wave_status(&mut self, rect: [i32; 4], use_tab: bool) -> Option<WaveStatus> {
         const KEY_TAB: u8 = 0x2B;
         if use_tab {
             if let Ok(driver) = self.driver.lock() {
@@ -352,12 +365,10 @@ impl TowerDefenseApp {
             if use_tab { "TAB" } else { "HUD" }
         );
 
-        let fixed = Self::fix_ocr_text(&text);
-        if fixed != text {
-            println!("🔧 [OCR Fix] 修复后: 「{}」", fixed.trim());
-        }
-
-        let val = self.extract_wave_with_validation(&fixed)?;
+        let is_same_text = self.last_ocr_text == text;
+        self.last_ocr_text = text.clone();
+        
+        let val = self.extract_wave_with_validation(&text, is_same_text)?;
         println!("✅ [OCR Match] 波次识别成功: 第 {} 波", val);
         Some(WaveStatus { current_wave: val })
     }
