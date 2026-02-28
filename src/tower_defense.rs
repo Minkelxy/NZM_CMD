@@ -617,14 +617,14 @@ impl TowerDefenseApp {
             driver.click_humanly(true, false, 60); 
             
             // 3. 等待选中框出现的延迟 (从 150ms 增加到 250ms)
-            thread::sleep(Duration::from_millis(150));
+            thread::sleep(Duration::from_millis(120));
 
             // 4. 🔥 双击 'E' 拆除 (Double Tap)
             // 第一下 E：执行拆除
             driver.key_click('e');
             
             // 间隔 100ms
-            thread::sleep(Duration::from_millis(100));
+            thread::sleep(Duration::from_millis(70));
             
             // 第二下 E：保险措施 (防止第一下被吞，或者部分陷阱需要二次确认)
             driver.key_click('e');
@@ -633,7 +633,7 @@ impl TowerDefenseApp {
         self.completed_demolish_uids.insert(uid);
         
         // 动作后摇 (稍微缩短一点，因为我们已经多按了一次E)
-        thread::sleep(Duration::from_millis(200));
+        thread::sleep(Duration::from_millis(50));
     }
 
 // src/tower_defense.rs
@@ -673,13 +673,13 @@ impl TowerDefenseApp {
                 d.key_click(key);
 
                 // 等待陷阱虚影完全浮现
-                thread::sleep(Duration::from_millis(250));
+                thread::sleep(Duration::from_millis(150));
                 *last_key = Some(key);
             } else if Some(key) != *last_key {
                 // 如果不是第一座，且类型变了（原地换塔），则单次按键切换
                 d.key_click(key);
                 *last_key = Some(key);
-                thread::sleep(Duration::from_millis(250));
+                thread::sleep(Duration::from_millis(100));
             } else {
                 // 同种塔连续放置，仅需微小延迟
                 thread::sleep(Duration::from_millis(50));
@@ -691,7 +691,7 @@ impl TowerDefenseApp {
         self.placed_uids.insert(uid);
 
         // 动作后摇
-        thread::sleep(Duration::from_millis(250));
+        thread::sleep(Duration::from_millis(100));
     }
 
     fn execute_single_upgrade(&mut self, u: &UpgradeEvent) {
@@ -716,7 +716,7 @@ impl TowerDefenseApp {
         }
         self.camera_offset_y = if top { 0.0 } else { max_scroll_y };
         self.clamp_camera_position();
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(100));
     }
 
     fn calibrate_camera_to_corner(&mut self, top_left: bool) {
@@ -738,7 +738,7 @@ impl TowerDefenseApp {
         self.camera_offset_x = target_x;
         self.camera_offset_y = target_y;
         self.clamp_camera_position();
-        thread::sleep(Duration::from_millis(500));
+        thread::sleep(Duration::from_millis(100));
     }
 
     fn scroll_camera_by_pixels(
@@ -798,7 +798,7 @@ impl TowerDefenseApp {
         }
         
         if moved {
-            thread::sleep(Duration::from_millis(200));
+            thread::sleep(Duration::from_millis(100));
         }
         
         moved
@@ -914,14 +914,14 @@ impl TowerDefenseApp {
 
         if let Ok(mut human) = self.driver.lock() {
             human.key_click('n');
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(200));
         }
 
         self.select_loadout();
 
         if let Ok(mut human) = self.driver.lock() {
             human.key_click('n');
-            thread::sleep(Duration::from_millis(500));
+            thread::sleep(Duration::from_millis(200));
         }
     }
 
