@@ -142,27 +142,57 @@ impl GameInterface {
     }
 
     pub fn get_text_from_area(&self, rect: [i32; 4]) -> String {
-         let x = rect[0]; 
-         let y = rect[1];
-         let w = (rect[2] - rect[0]).max(1);
-         let h = (rect[3] - rect[1]).max(1);
-         
-         let screens = Screen::all().unwrap_or_default();
-         let screen = match screens.first() { Some(s) => s, None => return String::new() };
-         
-         let captured_data = match screen.capture_area(x, y, w as u32, h as u32) {
-             Ok(img) => img,
-             Err(_) => return String::new(),
-         };
+        let x = rect[0]; 
+        let y = rect[1];
+        let w = (rect[2] - rect[0]).max(1);
+        let h = (rect[3] - rect[1]).max(1);
+        
+        let screens = Screen::all().unwrap_or_default();
+        let screen = match screens.first() { Some(s) => s, None => return String::new() };
+        
+        let captured_data = match screen.capture_area(x, y, w as u32, h as u32) {
+            Ok(img) => img,
+            Err(_) => return String::new(),
+        };
 
-         let rgba_img = image::RgbaImage::from_raw(captured_data.width(), captured_data.height(), captured_data.into_raw()).unwrap();
-         let dynamic_img = image::DynamicImage::ImageRgba8(rgba_img);
+        let rgba_img = image::RgbaImage::from_raw(captured_data.width(), captured_data.height(), captured_data.into_raw()).unwrap();
+        let dynamic_img = image::DynamicImage::ImageRgba8(rgba_img);
 
-         let scaled_img = dynamic_img.resize(w as u32 * 2, h as u32 * 2, image::imageops::FilterType::Lanczos3);
-         
-         let mut luma_mid = scaled_img.grayscale().into_luma8();
-         for pixel in luma_mid.pixels_mut() { pixel[0] = if pixel[0] > 140 { 255 } else { 0 }; }
-         self.run_windows_ocr(image::DynamicImage::ImageLuma8(luma_mid))
+        let scaled_img = dynamic_img.resize(w as u32 * 2, h as u32 * 2, image::imageops::FilterType::Lanczos3);
+        
+        let mut results: Vec<String> = Vec::new();
+
+        let thresholds: Vec<u8> = vec![100, 120, 140, 160, 180];
+        for thresh in &thresholds {
+            let mut luma = scaled_img.grayscale().into_luma8();
+            for pixel in luma.pixels_mut() { pixel[0] = if pixel[0] > *thresh { 255 } else { 0 }; }
+            let text = self.run_windows_ocr(image::DynamicImage::ImageLuma8(luma));
+            if !text.is_empty() { results.push(text); }
+        }
+
+        let original_text = self.run_windows_ocr(scaled_img);
+        if !original_text.is_empty() { results.push(original_text); }
+
+        self.fuse_ocr_results(&results)
+    }
+
+    fn fuse_ocr_results(&self, results: &[String]) -> String {
+        if results.is_empty() { return String::new(); }
+        if results.len() == 1 { return results[0].clone(); }
+
+        let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
+        for r in results {
+            *counts.entry(r.as_str()).or_insert(0) += 1;
+        }
+
+        let mut best: (&str, usize) = ("", 0);
+        for (text, count) in &counts {
+            if *count > best.1 || (*count == best.1 && text.len() > best.0.len()) {
+                best = (text, *count);
+            }
+        }
+
+        best.0.to_string()
     }
 
     fn check_text_anchor(&self, rect: [i32; 4], expected: &str) -> bool {

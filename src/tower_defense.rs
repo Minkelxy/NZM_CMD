@@ -61,7 +61,7 @@ impl Default for TDConfig {
     fn default() -> Self {
         Self {
             hud_check_rect: [262, 16, 389, 97],
-            hud_wave_loop_rect: [350, 288, 582, 362],
+            hud_wave_loop_rect: [344, 290, 548, 353],
             safe_zone: [200, 200, 1720, 880],
             screen_width: 1920.0,
             screen_height: 1080.0,

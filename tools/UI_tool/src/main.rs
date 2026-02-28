@@ -469,51 +469,78 @@ impl MapBuilderTool {
 
             let sub_img = image::imageops::crop_imm(img, x, y, w, h).to_image();
             let scaled_img = image::imageops::resize(&sub_img, w * 2, h * 2, image::imageops::FilterType::Lanczos3);
-            let dynamic_img = image::DynamicImage::ImageRgba8(scaled_img);
-
-            let mut png_buffer = Cursor::new(Vec::new());
-            if dynamic_img.write_to(&mut png_buffer, image::ImageFormat::Png).is_err() {
-                self.ocr_test_result = "图像编码失败".into();
-                return;
-            }
             
             self.ocr_test_result = "识别中...".into();
             let engine = self.ocr_engine.as_ref().unwrap();
-            let png_bytes = png_buffer.into_inner();
-
-            let run_recognition = || -> windows::core::Result<String> {
-                let stream = InMemoryRandomAccessStream::new()?;
-                let writer = DataWriter::CreateDataWriter(&stream)?;
-                writer.WriteBytes(&png_bytes)?;
-                writer.StoreAsync()?.get()?;
-                writer.FlushAsync()?.get()?;
-                stream.Seek(0)?;
-
-                let decoder = BitmapDecoder::CreateAsync(&stream)?.get()?;
-                let bmp = decoder.GetSoftwareBitmapAsync()?.get()?;
-                let result: OcrResult = engine.RecognizeAsync(&bmp)?.get()?;
+            
+            let mut results: Vec<String> = Vec::new();
+            
+            let thresholds: Vec<u8> = vec![100, 120, 140, 160, 180];
+            for thresh in &thresholds {
+                let mut luma = image::imageops::grayscale(&scaled_img);
+                for pixel in luma.pixels_mut() { pixel[0] = if pixel[0] > *thresh { 255 } else { 0 }; }
+                let dynamic_img = image::DynamicImage::ImageLuma8(luma);
                 
-                let mut text = String::new();
-                if let Ok(lines) = result.Lines() {
-                    for line in lines {
-                        if let Ok(h_str) = line.Text() {
-                            text.push_str(&h_str.to_string());
-                        }
-                    }
+                if let Some(txt) = self.run_ocr_on_image(engine, &dynamic_img) {
+                    if !txt.is_empty() { results.push(txt); }
                 }
-                Ok(text.replace(char::is_whitespace, ""))
-            };
+            }
 
-            match run_recognition() {
-                Ok(txt) => {
-                    self.ocr_test_result = if txt.is_empty() { "无文字".to_string() } else { txt };
-                    self.status_msg = format!("OCR 完成: {}", self.ocr_test_result);
-                },
-                Err(e) => {
-                    self.ocr_test_result = format!("API 错误: {:?}", e);
+            let original_dynamic = image::DynamicImage::ImageRgba8(scaled_img);
+            if let Some(txt) = self.run_ocr_on_image(engine, &original_dynamic) {
+                if !txt.is_empty() { results.push(txt); }
+            }
+
+            let final_result = self.fuse_ocr_results(&results);
+            self.ocr_test_result = if final_result.is_empty() { "无文字".to_string() } else { final_result };
+            self.status_msg = format!("OCR 完成: {}", self.ocr_test_result);
+        }
+    }
+
+    fn run_ocr_on_image(&self, engine: &OcrEngine, dynamic_img: &image::DynamicImage) -> Option<String> {
+        let mut png_buffer = Cursor::new(Vec::new());
+        dynamic_img.write_to(&mut png_buffer, image::ImageFormat::Png).ok()?;
+        let png_bytes = png_buffer.into_inner();
+
+        let stream = InMemoryRandomAccessStream::new().ok()?;
+        let writer = DataWriter::CreateDataWriter(&stream).ok()?;
+        writer.WriteBytes(&png_bytes).ok()?;
+        writer.StoreAsync().ok()?.get().ok()?;
+        writer.FlushAsync().ok()?.get().ok()?;
+        stream.Seek(0).ok()?;
+
+        let decoder = BitmapDecoder::CreateAsync(&stream).ok()?.get().ok()?;
+        let bmp = decoder.GetSoftwareBitmapAsync().ok()?.get().ok()?;
+        let result: OcrResult = engine.RecognizeAsync(&bmp).ok()?.get().ok()?;
+
+        let mut text = String::new();
+        if let Ok(lines) = result.Lines() {
+            for line in lines {
+                if let Ok(h_str) = line.Text() {
+                    text.push_str(&h_str.to_string());
                 }
             }
         }
+        Some(text.replace(char::is_whitespace, ""))
+    }
+
+    fn fuse_ocr_results(&self, results: &[String]) -> String {
+        if results.is_empty() { return String::new(); }
+        if results.len() == 1 { return results[0].clone(); }
+
+        use std::collections::HashMap;
+        let mut counts: HashMap<&str, usize> = HashMap::new();
+        for r in results {
+            *counts.entry(r.as_str()).or_insert(0) += 1;
+        }
+
+        let mut best: (&str, usize) = ("", 0);
+        for (text, count) in &counts {
+            if *count > best.1 || (*count == best.1 && text.len() > best.0.len()) {
+                best = (text, *count);
+            }
+        }
+        best.0.to_string()
     }
     
     fn draw_visualization_panel(&mut self, ui: &mut egui::Ui) {
