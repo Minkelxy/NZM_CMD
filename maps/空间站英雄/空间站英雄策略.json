@@ -1455,18 +1455,8 @@
       "is_late": false
     },
     {
-      "building_name": "防空导弹",
-      "wave_num": 5,
-      "is_late": false
-    },
-    {
       "building_name": "自修复磁暴塔",
       "wave_num": 5,
-      "is_late": false
-    },
-    {
-      "building_name": "天启陷阱",
-      "wave_num": 6,
       "is_late": false
     },
     {
@@ -1485,14 +1475,24 @@
       "is_late": false
     },
     {
-      "building_name": "自修复磁暴塔",
+      "building_name": "天网陷阱",
+      "wave_num": 7,
+      "is_late": false
+    },
+    {
+      "building_name": "防空导弹",
+      "wave_num": 6,
+      "is_late": true
+    },
+    {
+      "building_name": "天启陷阱",
       "wave_num": 7,
       "is_late": true
     },
     {
-      "building_name": "天网陷阱",
+      "building_name": "防空导弹",
       "wave_num": 7,
-      "is_late": false
+      "is_late": true
     }
   ],
   "demolishes": [
