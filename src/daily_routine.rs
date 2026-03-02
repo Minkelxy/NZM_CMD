@@ -1,16 +1,41 @@
 // src/daily_routine.rs
 use crate::human::HumanDriver;
 use crate::nav::NavEngine;
+use crate::tower_defense::TowerDefenseApp;
+use std::fs;
+use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
 use std::time::Duration;
 
-/// 定义单个任务槽位的配置
+const DAILY_RECORD_FILE: &str = "daily_record.txt";
+
+fn get_today_string() -> String {
+    use std::time::{SystemTime, UNIX_EPOCH};
+    let duration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
+    let days = duration.as_secs() / 86400;
+    format!("{}", days)
+}
+
+fn check_today_executed() -> bool {
+    if !Path::new(DAILY_RECORD_FILE).exists() {
+        return false;
+    }
+    if let Ok(content) = fs::read_to_string(DAILY_RECORD_FILE) {
+        let today = get_today_string();
+        return content.trim() == today;
+    }
+    false
+}
+
+fn mark_today_executed() {
+    let today = get_today_string();
+    let _ = fs::write(DAILY_RECORD_FILE, &today);
+}
+
 struct TaskSlot {
     index: usize,
-    /// 状态文字识别区域 [x1, y1, x2, y2]
     status_rect: [i32; 4],
-    /// 刷新按钮坐标 (x, y)
     refresh_pos: (u16, u16),
 }
 
@@ -22,7 +47,6 @@ pub struct DailyRoutineApp {
 
 impl DailyRoutineApp {
     pub fn new(driver: Arc<Mutex<HumanDriver>>, nav: Arc<NavEngine>) -> Self {
-        // 根据您提供的坐标配置 4 个任务槽
         let slots = vec![
             TaskSlot {
                 index: 1,
@@ -49,11 +73,19 @@ impl DailyRoutineApp {
         Self { driver, nav, slots }
     }
 
-    /// 执行日活逻辑主入口
     pub fn run(&self) {
         println!("📅 [Daily] 开始执行日活任务逻辑...");
         
-        // 最大轮次，防止无限刷新把钱刷光了
+        if !check_today_executed() {
+            println!("🎮 [Daily] 今日尚未执行塔防，先执行一次 [空间站英雄]...");
+            self.run_tower_defense();
+            mark_today_executed();
+            println!("✅ [Daily] 塔防执行完成，继续每日任务...");
+            thread::sleep(Duration::from_secs(3));
+        } else {
+            println!("✅ [Daily] 今日已执行过塔防，跳过。");
+        }
+        
         let max_rounds = 10; 
 
         for round in 1..=max_rounds {
@@ -61,13 +93,11 @@ impl DailyRoutineApp {
             
             let mut need_retry = false;
             
-            // 遍历 4 个任务槽
             for slot in &self.slots {
                 let processed = self.process_slot(slot);
                 if processed {
                     need_retry = true;
                 }
-                // 槽位间稍微停顿，看起来更像人
                 thread::sleep(Duration::from_millis(500)); 
             }
 
@@ -76,7 +106,6 @@ impl DailyRoutineApp {
                 break;
             }
 
-            // 如果本轮有操作（领取或刷新），等待界面动画刷新后继续
             println!("⏳ 等待任务列表刷新 (2秒)...");
             thread::sleep(Duration::from_secs(2));
         }
@@ -84,8 +113,21 @@ impl DailyRoutineApp {
         println!("🏁 [Daily] 日活流程结束。");
     }
 
-    /// 处理单个槽位，返回 true 表示进行了操作（需要进入下一轮检查）
-// src/daily_routine.rs
+    fn run_tower_defense(&self) {
+        let mut td_app = TowerDefenseApp::new(
+            Arc::clone(&self.driver),
+            Arc::clone(&self.nav),
+        );
+
+        let scene_id = "空间站英雄";
+        let map_dir = format!("maps/{}", scene_id);
+        let map_file = format!("{}/{}地图.json", map_dir, scene_id);
+        let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
+        let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
+
+        println!("📂 加载塔防配置: {}", map_dir);
+        td_app.run(&map_file, &strategy_file, &traps_file);
+    }
 
     fn process_slot(&self, slot: &TaskSlot) -> bool {
         // 1. OCR 识别状态
