@@ -66,10 +66,15 @@ struct ColorAnchor {
 #[derive(Deserialize, Debug, Clone)]
 struct Transition {
     target: String,
+    #[serde(default)]
     coords: [i32; 2],
     #[serde(default = "default_delay")]
     post_delay: u64,
+    #[serde(default)]
+    key: Option<String>,
 }
+
+fn default_coords() -> [i32; 2] { [0, 0] }
 
 fn default_delay() -> u64 { 500 }
 
@@ -227,6 +232,12 @@ impl GameInterface {
             bot.click_humanly(true, false, 0); 
         }
     }
+
+    fn perform_key(&self, key: &str) {
+        if let Ok(mut bot) = self.driver.lock() {
+            bot.key_click(key.chars().next().unwrap());
+        }
+    }
 }
 
 // ==========================================
@@ -332,8 +343,15 @@ impl NavEngine {
             None => { println!("❌ 无路可走"); return NavResult::Failed; }
         };
         for (i, step) in path.iter().enumerate() {
-            println!("\n➡️  [步骤 {}/{}] 点击 -> [{}]", i+1, path.len(), step.target);
-            self.interface.perform_click(step.coords[0], step.coords[1]);
+            println!("\n➡️  [步骤 {}/{}] -> [{}]", i+1, path.len(), step.target);
+            
+            if let Some(ref key) = step.key {
+                println!("⌨️  执行按键: {}", key);
+                self.interface.perform_key(key);
+            } else {
+                println!("🖱️  执行点击: ({}, {})", step.coords[0], step.coords[1]);
+                self.interface.perform_click(step.coords[0], step.coords[1]);
+            }
             
             // ✨ 核心修改：检查是否需要移交控制权
             // 如果 TOML 里写了 handler = "xxx"，或者它是无锚点的虚拟节点，则移交

@@ -1,6 +1,6 @@
 // src/daily_routine.rs
 use crate::human::HumanDriver;
-use crate::nav::NavEngine;
+use crate::nav::{NavEngine, NavResult};
 use crate::tower_defense::TowerDefenseApp;
 use std::fs;
 use std::path::Path;
@@ -114,19 +114,35 @@ impl DailyRoutineApp {
     }
 
     fn run_tower_defense(&self) {
-        let mut td_app = TowerDefenseApp::new(
-            Arc::clone(&self.driver),
-            Arc::clone(&self.nav),
-        );
+        let target_scene = "空间站英雄";
+        
+        println!("🧭 [Daily] 导航至 [{}]...", target_scene);
+        let nav_result = self.nav.navigate(target_scene);
+        
+        match nav_result {
+            NavResult::Handover(scene_id, _) => {
+                println!("✅ [Daily] 导航成功，开始塔防...");
+                
+                let mut td_app = TowerDefenseApp::new(
+                    Arc::clone(&self.driver),
+                    Arc::clone(&self.nav),
+                );
 
-        let scene_id = "空间站英雄";
-        let map_dir = format!("maps/{}", scene_id);
-        let map_file = format!("{}/{}地图.json", map_dir, scene_id);
-        let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
-        let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
+                let map_dir = format!("maps/{}", scene_id);
+                let map_file = format!("{}/{}地图.json", map_dir, scene_id);
+                let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
+                let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
 
-        println!("📂 加载塔防配置: {}", map_dir);
-        td_app.run(&map_file, &strategy_file, &traps_file);
+                println!("📂 加载塔防配置: {}", map_dir);
+                td_app.run(&map_file, &strategy_file, &traps_file);
+            }
+            NavResult::Success => {
+                println!("✅ [Daily] 已到达目标页面");
+            }
+            NavResult::Failed => {
+                println!("❌ [Daily] 导航失败，跳过塔防任务");
+            }
+        }
     }
 
     fn process_slot(&self, slot: &TaskSlot) -> bool {
