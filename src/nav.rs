@@ -74,8 +74,6 @@ struct Transition {
     key: Option<String>,
 }
 
-fn default_coords() -> [i32; 2] { [0, 0] }
-
 fn default_delay() -> u64 { 500 }
 
 // ==========================================
@@ -293,25 +291,43 @@ impl NavEngine {
     }
 
     pub fn identify_current_scene(&self, hint: Option<&str>) -> Option<String> {
-        println!("👀 扫描当前界面...");
-        if let Some(target_id) = hint {
-            if self.get_match_score(target_id) > 0 {
-                println!("✅ 命中预期目标: [{}]", target_id);
-                return Some(target_id.to_string());
+        for attempt in 1..=3 {
+            println!("👀 扫描当前界面... (尝试 {}/3)", attempt);
+            
+            if let Some(target_id) = hint {
+                if self.get_match_score(target_id) > 0 {
+                    println!("✅ 命中预期目标: [{}]", target_id);
+                    return Some(target_id.to_string());
+                }
+            }
+            
+            let mut best_match: Option<String> = None;
+            let mut max_score = 0;
+            for (id, _) in &self.scenes {
+                if let Some(h) = hint { if h == id { continue; } }
+                let score = self.get_match_score(id);
+                if score > 0 && score > max_score {
+                    max_score = score;
+                    best_match = Some(id.clone());
+                }
+            }
+            
+            if let Some(id) = &best_match {
+                println!("✅ 定位: [{}] (得分: {})", id, max_score);
+                return Some(id.clone());
+            }
+            
+            if attempt < 3 {
+                println!("⚠️ 界面识别失败，按 ESC + 空格 后重试...");
+                self.interface.perform_key("ESC");
+                thread::sleep(Duration::from_millis(300));
+                self.interface.perform_key(" ");
+                thread::sleep(Duration::from_millis(500));
             }
         }
-        let mut best_match: Option<String> = None;
-        let mut max_score = 0;
-        for (id, _) in &self.scenes {
-            if let Some(h) = hint { if h == id { continue; } }
-            let score = self.get_match_score(id);
-            if score > 0 && score > max_score {
-                max_score = score;
-                best_match = Some(id.clone());
-            }
-        }
-        if let Some(id) = &best_match { println!("✅ 定位: [{}] (得分: {})", id, max_score); }
-        best_match
+        
+        println!("❌ 界面识别失败 (已重试3次)");
+        None
     }
 
     fn wait_for_scene(&self, target_id: &str, timeout_ms: u64) -> bool {

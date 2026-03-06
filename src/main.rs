@@ -7,6 +7,7 @@ use nzm_cmd::nav::{NavEngine, NavResult};
 use nzm_cmd::tower_defense::TowerDefenseApp;
 use screenshots::Screen;
 use std::fs;
+use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 use std::thread;
@@ -18,7 +19,6 @@ enum RunMode {
     Loop,
     Once,
     Daily,
-    Schedule,
 }
 
 #[derive(Parser, Debug)]
@@ -27,17 +27,11 @@ struct Args {
     #[arg(short, long, default_value = "COM3")]
     port: String,
 
-    #[arg(short, long, default_value = "空间站普通")]
-    target: String,
-
-    #[arg(long)]
-    test: Option<String>,
-
     #[arg(short, long, default_value = "loop")]
     mode: RunMode,
 
-    #[arg(short, long)]
-    schedule: Option<String>,
+    #[arg(long)]
+    test: Option<String>,
 }
 
 const TD_RECORD_FILE: &str = "td_record.txt";
@@ -66,62 +60,12 @@ fn mark_today_executed(scene_id: &str) {
     let _ = fs::write(&file, &today);
 }
 
-fn get_current_time() -> (u32, u32) {
-    let duration = SystemTime::now().duration_since(UNIX_EPOCH).unwrap();
-    let total_secs = duration.as_secs();
-    let hours = ((total_secs % 86400) / 3600 + 8) % 24;
-    let minutes = (total_secs % 3600) / 60;
-    (hours as u32, minutes as u32)
-}
-
-fn parse_schedule_time(s: &str) -> Option<(u32, u32)> {
-    let parts: Vec<&str> = s.split(':').collect();
-    if parts.len() != 2 {
-        return None;
-    }
-    let hours: u32 = parts[0].parse().ok()?;
-    let minutes: u32 = parts[1].parse().ok()?;
-    if hours < 24 && minutes < 60 {
-        Some((hours, minutes))
-    } else {
-        None
-    }
-}
-
-fn wait_until_schedule(target_time: (u32, u32)) {
-    loop {
-        let current = get_current_time();
-        if current.0 == target_time.0 && current.1 == target_time.1 {
-            println!("⏰ 到达预定时间，开始执行！");
-            return;
-        }
-        
-        let current_mins = current.0 * 60 + current.1;
-        let target_mins = target_time.0 * 60 + target_time.1;
-        let diff_mins = if target_mins > current_mins {
-            target_mins - current_mins
-        } else {
-            1440 - current_mins + target_mins
-        };
-        
-        println!("⏰ 当前时间 {:02}:{:02}，等待至 {:02}:{:02} (还需 {} 分钟)", 
-            current.0, current.1, target_time.0, target_time.1, diff_mins);
-        
-        thread::sleep(Duration::from_secs(60));
-    }
-}
-
 fn main() {
     let args = Args::parse();
 
     println!("========================================");
     println!("🚀 NZM_CMD 智能控制中心");
     println!("📍 端口: {}", args.port);
-    if let Some(t) = &args.test {
-        println!("🔧 模式: 测试 ({})", t);
-    } else {
-        println!("🎯 目标: {}", args.target);
-    }
     println!("========================================");
 
     let (sw, sh) = (1920, 1080);
@@ -173,125 +117,194 @@ fn main() {
         return;
     }
 
-    println!("✅ 引擎就绪，5秒后开始自动化...");
-    println!("📋 执行模式: {:?}", args.mode);
-    if let Some(ref t) = args.schedule {
-        println!("⏰ 定时: {}", t);
-    }
-    thread::sleep(Duration::from_secs(5));
+    println!("✅ 引擎就绪，进入交互模式");
+    println!("========================================");
+    println!("📋 可用命令:");
+    println!("   <目标名称>  - 导航并执行目标 (如: 空间站英雄)");
+    println!("   daily       - 执行每日任务 (自动检测塔防)");
+    println!("   td <地图>   - 执行塔防 (如: td 空间站英雄)");
+    println!("   status      - 查看今日执行状态");
+    println!("   help        - 显示帮助");
+    println!("   exit        - 退出程序");
+    println!("========================================");
 
-    if args.mode == RunMode::Schedule {
-        if let Some(schedule_time) = &args.schedule {
-            if let Some(target_time) = parse_schedule_time(schedule_time) {
-                wait_until_schedule(target_time);
-            } else {
-                println!("❌ 定时格式错误，请使用 HH:MM 格式 (如 03:00)");
-                return;
-            }
-        } else {
-            println!("❌ 定时模式需要指定 --schedule 参数");
-            return;
+    let stdin = io::stdin();
+    print!("> ");
+    io::stdout().flush().unwrap();
+
+    for line in stdin.lock().lines() {
+        let input = line.unwrap_or_default().trim().to_string();
+        
+        if input.is_empty() {
+            print!("> ");
+            io::stdout().flush().unwrap();
+            continue;
         }
-    }
 
-    let should_loop = args.mode == RunMode::Loop;
+        let parts: Vec<&str> = input.split_whitespace().collect();
+        let cmd = parts.get(0).unwrap_or(&"");
 
-    loop {
-        println!("\n🔄 [主控] 正在导航至: {}...", args.target);
-
-        let nav_result = engine.navigate(&args.target);
-
-        match nav_result {
-            NavResult::Handover(scene_id, handler_opt) => {
-                println!("⚔️ [主控] 导航成功: [{}]", scene_id);
-
-                let handler_key = handler_opt.as_deref().unwrap_or("td");
-
-                match handler_key {
-                    "daily" => {
-                        println!("📅 [路由] 检测到 'daily' 标记，启动日活模块...");
-                        let app =
-                            DailyRoutineApp::new(Arc::clone(&human_driver), Arc::clone(&engine));
-                        app.run();
-                    }
-                    "td" | _ => {
-                        let execute = match args.mode {
-                            RunMode::Daily => {
-                                if check_today_executed(&scene_id) {
-                                    println!("✅ [Daily] 今日已执行过 [{}]，跳过。", scene_id);
-                                    false
-                                } else {
-                                    println!("🎮 [Daily] 今日尚未执行，开始执行 [{}]...", scene_id);
-                                    true
-                                }
-                            }
-                            RunMode::Loop | RunMode::Once | RunMode::Schedule => true,
-                        };
-
-                        if execute {
-                            println!("🏰 [路由] 启动塔防模块 (Handler: {})...", handler_key);
-                            let mut td_app =
-                                TowerDefenseApp::new(Arc::clone(&human_driver), Arc::clone(&engine));
-
-                            let map_dir = format!("maps/{}", scene_id);
-                            let map_file = format!("{}/{}地图.json", map_dir, scene_id);
-                            let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
-                            let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
-
-                            println!("📂 加载配置目录: {}", map_dir);
-                            println!("   📍 地图: {}", map_file);
-                            println!("   📍 策略: {}", strategy_file);
-                            println!("   📍 防御塔: {}", traps_file);
-                            td_app.run(&map_file, &strategy_file, &traps_file);
-
-                            if args.mode == RunMode::Daily {
-                                mark_today_executed(&scene_id);
-                                println!("✅ [Daily] 已标记今日执行完成。");
-                            }
-                        }
-                    }
-                }
-
-                if !should_loop {
-                    println!("🎉 单次执行完成，退出程序。");
-                    break;
-                }
-                println!("🎉 本局任务结束，5秒后重新开始循环...");
-                thread::sleep(Duration::from_secs(5));
+        match *cmd {
+            "exit" | "quit" | "q" => {
+                println!("� 退出程序");
+                break;
             }
-
-            NavResult::Failed => {
-                println!("❌ [主控] 导航失败，执行重置操作 (ESC)...");
-
-                if let Ok(mut human) = human_driver.lock() {
-                    human.key_hold('\u{1B}', 100);
-
-                    if let Ok(mut dev) = human.device.lock() {
-                        dev.key_down(0x29, 0);
-                    }
-                    thread::sleep(Duration::from_millis(100));
-                    if let Ok(mut dev) = human.device.lock() {
-                        dev.key_up();
-                    }
-
-                    thread::sleep(Duration::from_millis(100));
-                    if let Ok(mut dev) = human.device.lock() {
-                        dev.key_down(0x2C, 0);
-                    }
-                    thread::sleep(Duration::from_millis(100));
-                    if let Ok(mut dev) = human.device.lock() {
-                        dev.key_up(); 
-                    }
+            "help" | "h" | "?" => {
+                println!("📋 可用命令:");
+                println!("   <目标名称>  - 导航并执行目标");
+                println!("   daily       - 执行每日任务");
+                println!("   td <地图>   - 执行塔防");
+                println!("   status      - 查看今日执行状态");
+                println!("   exit        - 退出程序");
+            }
+            "status" => {
+                let today = get_today_string();
+                println!("📅 今日标记: {}", today);
+                
+                let scenes = vec!["空间站英雄", "空间站普通", "空间站困难", "空间站炼狱"];
+                for scene in scenes {
+                    let status = if check_today_executed(scene) {
+                        "✅ 已执行"
+                    } else {
+                        "⬜ 未执行"
+                    };
+                    println!("   {}: {}", scene, status);
                 }
+            }
+            "daily" => {
+                println!("⏳ 1秒后执行...");
+                thread::sleep(Duration::from_secs(1));
+                execute_daily(Arc::clone(&human_driver), Arc::clone(&engine));
+            }
+            "td" => {
+                if parts.len() > 1 {
+                    let target = parts[1..].join(" ");
+                    println!("⏳ 1秒后执行...");
+                    thread::sleep(Duration::from_secs(1));
+                    execute_td(&target, Arc::clone(&human_driver), Arc::clone(&engine));
+                } else {
+                    println!("❌ 用法: td <地图名称>");
+                    println!("   示例: td 空间站英雄");
+                }
+            }
+            _ => {
+                println!("⏳ 1秒后执行...");
+                thread::sleep(Duration::from_secs(1));
+                execute_target(&input, Arc::clone(&human_driver), Arc::clone(&engine));
+            }
+        }
 
-                println!("⏳ 等待界面重置 (3秒)...");
+        print!("> ");
+        io::stdout().flush().unwrap();
+    }
+}
+
+fn execute_daily(driver: Arc<Mutex<HumanDriver>>, engine: Arc<NavEngine>) {
+    println!("\n� [Daily] 开始执行每日任务流程...");
+    
+    let td_scene = "空间站英雄";
+    
+    if !check_today_executed(td_scene) {
+        println!("🎮 [Daily] 今日尚未执行塔防，先执行 [{}]...", td_scene);
+        
+        println!("🧭 [Daily] 导航至 [{}]...", td_scene);
+        let nav_result = engine.navigate(td_scene);
+        
+        match nav_result {
+            NavResult::Handover(scene_id, _) => {
+                execute_td_internal(&scene_id, driver.clone(), engine.clone());
+                mark_today_executed(&scene_id);
+                println!("✅ [Daily] 塔防执行完成");
+                
                 thread::sleep(Duration::from_secs(3));
             }
-
             NavResult::Success => {
-                println!("✅ [主控] 导航到达终点，等待重置...");
-                thread::sleep(Duration::from_secs(5));
+                println!("✅ [Daily] 已到达目标页面");
             }
+            NavResult::Failed => {
+                println!("❌ [Daily] 导航失败");
+            }
+        }
+    } else {
+        println!("✅ [Daily] 今日已执行过塔防，跳过");
+    }
+
+    println!("🧭 [Daily] 导航至 [每日目标]...");
+    let nav_result = engine.navigate("每日目标");
+    
+    match nav_result {
+        NavResult::Handover(_, _) => {
+            let app = DailyRoutineApp::new(driver, engine);
+            app.run();
+        }
+        NavResult::Success => {
+            println!("✅ [Daily] 已到达每日目标页面");
+        }
+        NavResult::Failed => {
+            println!("❌ [Daily] 导航失败");
+        }
+    }
+    
+    println!("🏁 [Daily] 每日任务流程结束");
+}
+
+fn execute_td(target: &str, driver: Arc<Mutex<HumanDriver>>, engine: Arc<NavEngine>) {
+    println!("\n🏰 [TD] 执行塔防: {}", target);
+    
+    println!("🧭 [TD] 导航至 [{}]...", target);
+    let nav_result = engine.navigate(target);
+    
+    match nav_result {
+        NavResult::Handover(scene_id, _) => {
+            execute_td_internal(&scene_id, driver, engine);
+            println!("✅ [TD] 塔防执行完成");
+        }
+        NavResult::Success => {
+            println!("✅ [TD] 已到达目标页面");
+        }
+        NavResult::Failed => {
+            println!("❌ [TD] 导航失败");
+        }
+    }
+}
+
+fn execute_td_internal(scene_id: &str, driver: Arc<Mutex<HumanDriver>>, engine: Arc<NavEngine>) {
+    let mut td_app = TowerDefenseApp::new(driver, engine);
+
+    let map_dir = format!("maps/{}", scene_id);
+    let map_file = format!("{}/{}地图.json", map_dir, scene_id);
+    let strategy_file = format!("{}/{}策略.json", map_dir, scene_id);
+    let traps_file = format!("{}/{}防御塔列表.json", map_dir, scene_id);
+
+    println!("📂 加载塔防配置: {}", map_dir);
+    td_app.run(&map_file, &strategy_file, &traps_file);
+}
+
+fn execute_target(target: &str, driver: Arc<Mutex<HumanDriver>>, engine: Arc<NavEngine>) {
+    println!("\n🎯 执行目标: {}", target);
+    
+    let nav_result = engine.navigate(target);
+    
+    match nav_result {
+        NavResult::Handover(scene_id, handler_opt) => {
+            let handler_key = handler_opt.as_deref().unwrap_or("td");
+
+            match handler_key {
+                "daily" => {
+                    println!("📅 [路由] 启动日活模块...");
+                    let app = DailyRoutineApp::new(driver, engine);
+                    app.run();
+                }
+                "td" | _ => {
+                    execute_td_internal(&scene_id, driver, engine);
+                }
+            }
+        }
+        NavResult::Success => {
+            println!("✅ 已到达目标位置");
+        }
+        NavResult::Failed => {
+            println!("❌ 导航失败");
         }
     }
 }
@@ -376,28 +389,21 @@ fn run_scroll_test(driver: Arc<Mutex<HumanDriver>>) {
     println!("Done.");
 }
 
-// ✨ 新增 Combo 测试函数
 fn run_combo_test(driver: Arc<Mutex<HumanDriver>>) {
     println!("Testing Combo Sequence (Loop)... Press Ctrl+C to stop.");
-    // 默认间隔 50ms
     let delay = Duration::from_millis(40);
 
-    // HID 键码: b=0x05, 4=0x21, 5=0x22
     let key_b = 0x05;
     let key_4 = 0x20;
     let key_5 = 0x21;
 
     loop {
-        // 锁定 HumanDriver 以获取访问权限
         if let Ok(mut human) = driver.lock() {
-            // 1. 鼠标左键两下
-            // (click_humanly 内部会有几十毫秒的 hold time)
             human.click_humanly(true, false, 50);
             thread::sleep(delay);
             human.click_humanly(true, false, 0);
             thread::sleep(delay);
 
-            // 2. 按 b, 按 5
             if let Ok(mut dev) = human.device.lock() {
                 dev.key_down(key_b, 0);
             }
@@ -407,43 +413,21 @@ fn run_combo_test(driver: Arc<Mutex<HumanDriver>>) {
             }
             thread::sleep(delay);
 
-            // 3. 松 b, 松 5
             if let Ok(mut dev) = human.device.lock() {
-                dev.key_up(); // 释放 (通常是释放所有或最后一个)
+                dev.key_up();
             }
             thread::sleep(delay);
             if let Ok(mut dev) = human.device.lock() {
-                dev.key_up(); // 再次释放以防万一
+                dev.key_up();
             }
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            // 4. 鼠标左键两下
+            
+            for _ in 0..20 { thread::sleep(delay); }
+
             human.click_humanly(true, false, 0);
             thread::sleep(delay);
             human.click_humanly(true, false, 0);
             thread::sleep(delay);
 
-            // 5. 按 b, 按 4
             if let Ok(mut dev) = human.device.lock() {
                 dev.key_down(key_b, 0);
             }
@@ -453,7 +437,6 @@ fn run_combo_test(driver: Arc<Mutex<HumanDriver>>) {
             }
             thread::sleep(delay);
 
-            // 6. 松 b, 松 4
             if let Ok(mut dev) = human.device.lock() {
                 dev.key_up();
             }
@@ -461,34 +444,8 @@ fn run_combo_test(driver: Arc<Mutex<HumanDriver>>) {
             if let Ok(mut dev) = human.device.lock() {
                 dev.key_up();
             }
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
-            thread::sleep(delay);
+            
+            for _ in 0..25 { thread::sleep(delay); }
         }
-        // 循环继续
     }
 }

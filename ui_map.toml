@@ -81,7 +81,7 @@ coords = [352, 132]
 post_delay = 500
 
 [[scenes.transitions]]
-target = "任务系统"
+target = "游戏大厅主界面"
 key = "ESC"
 post_delay = 1000
 
