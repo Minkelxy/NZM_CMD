@@ -4,6 +4,7 @@ use nzm_cmd::daily_routine::DailyRoutineApp;
 use nzm_cmd::hardware::{create_driver, DriverType, InputDriver};
 use nzm_cmd::human::HumanDriver;
 use nzm_cmd::nav::{NavEngine, NavResult};
+use nzm_cmd::scheduler::TaskScheduler;
 use nzm_cmd::tower_defense::TowerDefenseApp;
 use screenshots::Screen;
 use std::fs;
@@ -102,6 +103,7 @@ fn main() {
     )));
 
     let engine = Arc::new(NavEngine::new("ui_map.toml", Arc::clone(&human_driver)));
+    let scheduler = Arc::new(Mutex::new(TaskScheduler::new("tasks.toml")));
 
     if let Some(mode) = args.test.as_deref() {
         println!("⏳ 5秒后开始执行 [{}] 测试...", mode);
@@ -123,6 +125,9 @@ fn main() {
     println!("   <目标名称>  - 导航并执行目标 (如: 空间站英雄)");
     println!("   daily       - 执行每日任务 (自动检测塔防)");
     println!("   td <地图>   - 执行塔防 (如: td 空间站英雄)");
+    println!("   tasks       - 查看任务列表");
+    println!("   run         - 执行到期任务");
+    println!("   daemon      - 启动守护模式 (自动执行任务)");
     println!("   status      - 查看今日执行状态");
     println!("   help        - 显示帮助");
     println!("   exit        - 退出程序");
@@ -146,7 +151,7 @@ fn main() {
 
         match *cmd {
             "exit" | "quit" | "q" => {
-                println!("� 退出程序");
+                println!("👋 退出程序");
                 break;
             }
             "help" | "h" | "?" => {
@@ -154,6 +159,9 @@ fn main() {
                 println!("   <目标名称>  - 导航并执行目标");
                 println!("   daily       - 执行每日任务");
                 println!("   td <地图>   - 执行塔防");
+                println!("   tasks       - 查看任务列表");
+                println!("   run         - 执行到期任务");
+                println!("   daemon      - 启动守护模式");
                 println!("   status      - 查看今日执行状态");
                 println!("   exit        - 退出程序");
             }
@@ -169,6 +177,51 @@ fn main() {
                         "⬜ 未执行"
                     };
                     println!("   {}: {}", scene, status);
+                }
+            }
+            "tasks" => {
+                if let Ok(sched) = scheduler.lock() {
+                    sched.list_tasks();
+                    println!("\n⏰ 下次任务: {}", sched.format_next_time());
+                }
+            }
+            "run" => {
+                if let Ok(mut sched) = scheduler.lock() {
+                    let due_tasks = sched.get_due_tasks();
+                    if due_tasks.is_empty() {
+                        println!("ℹ️ 没有到期任务");
+                    } else {
+                        println!("🚀 执行 {} 个到期任务...", due_tasks.len());
+                        drop(sched);
+                        
+                        for task in due_tasks {
+                            println!("\n📋 执行任务: {}", task.name);
+                            thread::sleep(Duration::from_secs(1));
+                            execute_target(&task.target, Arc::clone(&human_driver), Arc::clone(&engine));
+                        }
+                    }
+                }
+            }
+            "daemon" => {
+                println!("🔄 启动守护模式 (每60秒检查一次任务)...");
+                println!("   输入 'stop' 停止守护模式");
+                
+                loop {
+                    if let Ok(mut sched) = scheduler.lock() {
+                        let due_tasks = sched.get_due_tasks();
+                        drop(sched);
+                        
+                        for task in due_tasks {
+                            println!("\n⏰ [Daemon] 执行任务: {}", task.name);
+                            execute_target(&task.target, Arc::clone(&human_driver), Arc::clone(&engine));
+                        }
+                    }
+                    
+                    println!("💤 等待60秒... (输入 'stop' 停止)");
+                    
+                    for _ in 0..60 {
+                        thread::sleep(Duration::from_secs(1));
+                    }
                 }
             }
             "daily" => {

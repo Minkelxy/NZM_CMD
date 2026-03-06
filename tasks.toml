@@ -1,0 +1,38 @@
+# 任务调度配置文件
+# 支持周期执行和定时执行
+
+[[tasks]]
+name = "每日塔防"
+target = "空间站英雄"
+enabled = true
+
+[tasks.schedule]
+type = "daily"
+time = "08:00"
+
+[[tasks]]
+name = "每日任务"
+target = "daily"
+enabled = true
+
+[tasks.schedule]
+type = "daily"
+time = "08:30"
+
+[[tasks]]
+name = "午间塔防"
+target = "空间站英雄"
+enabled = false
+
+[tasks.schedule]
+type = "daily"
+time = "12:00"
+
+[[tasks]]
+name = "周期测试"
+target = "空间站普通"
+enabled = false
+
+[tasks.schedule]
+type = "interval"
+minutes = 30
